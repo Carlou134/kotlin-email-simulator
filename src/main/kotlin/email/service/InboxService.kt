@@ -8,6 +8,7 @@ import user.infrastructure.InMemoryUserRepository
 import user.service.AuthenticationException
 import user.service.UserAlreadyExistsException
 import user.service.UserNotFoundException
+import java.util.UUID
 
 class InboxService (
     private val userRepository: InMemoryUserRepository,
@@ -17,6 +18,10 @@ class InboxService (
         if(userRepository.findByUsername(username) != null){
             throw UserAlreadyExistsException(username)
         }
+        userRepository.save(User(
+            username = username,
+            password = password,
+        ))
     }
 
     fun login(username: String, password: String):User{
@@ -56,5 +61,43 @@ class InboxService (
             body = body
         )
         emailRepository.save(mail)
+    }
+
+    fun listByFolder(user: User, folder: Folder): List<Email>{
+        return emailRepository.findByOwner(user.id).filter {
+            it.folder == folder
+        }
+    }
+
+    fun markAsRead(user: User, emailId: UUID){
+        val mail = emailRepository.findById(emailId)?:throw EmailNotFoundException(emailId.toString())
+
+        if(mail.owner != user.id){
+            throw EmailNotFoundException(emailId.toString())
+        }
+
+        mail.isRead = true
+        emailRepository.save(mail)
+    }
+
+    fun moveToFolder(user: User, emailId: UUID, folder: Folder){
+        val mail = emailRepository.findById(emailId)?:throw EmailNotFoundException(emailId.toString())
+
+        if(mail.owner != user.id){
+            throw EmailNotFoundException(emailId.toString())
+        }
+
+        mail.folder = folder
+        emailRepository.save(mail)
+    }
+
+    fun deleteMail(user: User, emailId: UUID){
+        val mail = emailRepository.findById(emailId)?:throw EmailNotFoundException(emailId.toString())
+
+        if(mail.owner != user.id){
+            throw EmailNotFoundException(emailId.toString())
+        }
+
+        emailRepository.delete(emailId)
     }
 }

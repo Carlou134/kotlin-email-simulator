@@ -8,6 +8,7 @@ class InMemoryEmailRepository: EmailRepository{
     private val emails = mutableListOf<Email>()
 
     override fun save(email: Email) {
+        emails.removeIf { it.id == email.id }
         emails.add(email)
     }
 
