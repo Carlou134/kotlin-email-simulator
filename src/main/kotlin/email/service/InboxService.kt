@@ -33,18 +33,21 @@ class InboxService (
     }
 
     fun sendEmail(user: User, toUsername:String, subject: String, body: String){
-        val emailToSend = Email(
+        val sentMail = Email(
             owner = user.id,
             from = user.username,
             to = toUsername,
             subject = subject,
-            body = body
+            body = body,
+            folder = Folder.SENT
         )
 
-        emailRepository.save(emailToSend)
+        emailRepository.save(sentMail)
 
-        userRepository.findByUsername(toUsername)?.let {
-            val inboxMail = emailToSend.copy(
+        userRepository.findByUsername(toUsername)?.let { recipient ->
+            val inboxMail = sentMail.copy(
+                id = UUID.randomUUID(),
+                owner = recipient.id,
                 folder = Folder.INBOX
             )
 
